@@ -1,0 +1,38 @@
+{
+  "name": "mqtt-sight",
+  "version": "1.0.2",
+  "description": "An advanced MQTT message visualization tool with powerful filtering, masking, and display options",
+  "module": "index.ts",
+  "type": "module",
+  "bin": {
+    "mqtt-sight": "./index.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "mqtt": "^5.10.4",
+    "table": "^6.9.0"
+  },
+  "scripts": {
+    "start": "bun index.ts"
+  },
+  "keywords": [
+    "mqtt",
+    "cli",
+    "visualization",
+    "retained",
+    "messages",
+    "broker",
+    "bun"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nazt/mqtt-sight.git"
+  }
+}
