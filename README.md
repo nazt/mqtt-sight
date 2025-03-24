@@ -26,10 +26,10 @@ bunx mqtt-sight -t "topic" -h "mqtt-broker-host"
 bunx mqtt-sight -t "#" -h localhost -u username -P password -d
 
 # Filter for specific patterns
-bunx mqtt-sight -t "#" -h localhost -i "error-*,warning-*" --live
+bunx mqtt-sight -t "#" -h localhost -f "error-*,warning-*" --live
 
 # Mask sensitive data (keeping last 4 characters visible)
-bunx mqtt-sight -t "#" -h localhost -m "password,apikey,token" -p "last4"
+bunx mqtt-sight -t "#" -h localhost -x "password,apikey,token" -p "last4"
 
 # Clear retained messages
 bunx mqtt-sight -t "sensors/#" -h localhost -u username -P password --clear
@@ -46,9 +46,9 @@ bunx mqtt-sight --help
 - `-P <password>`: Password for authentication (requires -u)
 - `-d`: Enable debug output
 - `-e, --exclude`: Exclude topics matching pattern(s)
-- `-i, --include`: Only include topics/payloads matching pattern(s)
-- `-f, --filter`: Filter mode: 'topic', 'payload', or 'both' (default)
-- `-m, --mask`: Mask patterns in topics and payloads
+- `-f, --filter`: Only include topics/payloads matching pattern(s)
+- `-m, --mode`: Filter mode: 'topic', 'payload', or 'both' (default)
+- `-x, --mask`: Mask patterns in topics and payloads
 - `-p, --preserve`: Preserve part of masked text: 'none', 'first4', 'last4', or 'both4'
 - `-s, --sort`: Sort messages by: 'time' or 'topic' (default: 'time')
 - `--clear`: Clear retained messages on subscribed topics
@@ -100,17 +100,17 @@ The tool includes interactive keyboard commands:
 
 MQTT Sight supports powerful filtering capabilities:
 
-- **Include Patterns**: Only show messages matching specific patterns
-- **Exclude Patterns**: Hide messages matching specific patterns
-- **Filter Modes**: Apply filters to topics, payloads, or both
+- **Filter Patterns** (`-f, --filter`): Only show messages matching specific patterns
+- **Exclude Patterns** (`-e, --exclude`): Hide messages matching specific patterns
+- **Filter Modes** (`-m, --mode`): Apply filters to topics, payloads, or both
 - **Pattern Highlighting**: Visually highlight matched patterns in green
 
 #### Sensitive Data Masking
 
 Protect sensitive information in your MQTT traffic:
 
-- **Custom Mask Patterns**: Define which patterns to mask
-- **Preserve Options**: Choose how much of the masked data to show:
+- **Custom Mask Patterns** (`-x, --mask`): Define which patterns to mask
+- **Preserve Options** (`-p, --preserve`): Choose how much of the masked data to show:
   - `none`: Mask entire string
   - `first4`: Show first 4 characters
   - `last4`: Show last 4 characters
@@ -139,7 +139,7 @@ bun start -t "#" -h localhost -d
 bun start -t "sensors/#" -h localhost --clear
 
 # Run with advanced filtering and masking
-bun start -t "#" -h localhost -i "NC-*" -m "password,token" -p "last4"
+bun start -t "#" -h localhost -f "NC-*" -x "password,token" -p "last4"
 ```
 
 ## License

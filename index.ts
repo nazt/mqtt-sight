@@ -18,8 +18,8 @@ Examples:
   bunx mqtt-sight -t "#" -h localhost -u username -P password --live
   bunx mqtt-sight -t "#" -h localhost -e "internal/*,debug/*,sys*"
   bunx mqtt-sight -t "#" -h localhost -s topic
-  bunx mqtt-sight -t "#" -h localhost -i "error-*,warning-*" --live
-  bunx mqtt-sight -t "#" -h localhost -m "password,token,apikey" -p "last4"
+  bunx mqtt-sight -t "#" -h localhost -f "error-*,warning-*" --live
+  bunx mqtt-sight -t "#" -h localhost -x "password,token,apikey" -p "last4"
 
 Options:
   -t <topic>     Topic to subscribe to (default: "#")
@@ -29,11 +29,11 @@ Options:
   -d             Enable debug output
   -e, --exclude  Exclude topics matching pattern(s) (comma-separated, supports wildcards)
                  Examples: "temp/*" excludes all temp/ topics, "*log" excludes topics ending with "log"
-  -i, --include  Only include topics/payloads matching pattern(s) (comma-separated, supports wildcards)
+  -f, --filter   Only include topics/payloads matching pattern(s) (comma-separated, supports wildcards)
                  Examples: "NC-*" only includes topics/payloads containing NC-, "Error-*" includes errors
-  -f, --filter   Filter mode: 'topic' (match against topic), 'payload' (match against payload),
-                 or 'both' (default: 'both')
-  -m, --mask     Mask patterns in topics and payloads (comma-separated)
+  -m, --mode     Filter mode: 'topic' (match against topic), 'payload' (match against payload),
+                 or 'both' (default: 'both'). Used with -f/--filter to determine where to apply filters
+  -x, --mask     Mask patterns in topics and payloads (comma-separated)
                  Examples: "password,token,apikey" will mask these terms
   -p, --preserve Preserve part of masked text: 'none' (mask all), 'first4' (keep first 4 chars),
                  'last4' (keep last 4 chars), or 'both4' (keep first and last 4)
@@ -103,9 +103,9 @@ const { values, positionals } = parseArgs({
     clear: { type: 'boolean', default: false, description: 'Clear retained messages' },
     live: { type: 'boolean', default: false, description: 'Show all messages (not just retained)' },
     exclude: { type: 'string', short: 'e', description: 'Exclude topics matching pattern (comma separated)' },
-    include: { type: 'string', short: 'i', description: 'Include only topics/payloads matching pattern (comma separated)' },
-    filter: { type: 'string', short: 'f', default: 'both', description: 'Filter mode: topic, payload, or both' },
-    mask: { type: 'string', short: 'm', description: 'Mask patterns in topics and payloads (comma separated)' },
+    filter: { type: 'string', short: 'f', description: 'Include only topics/payloads matching pattern (comma separated)' },
+    mode: { type: 'string', short: 'm', default: 'both', description: 'Filter mode: topic, payload, or both' },
+    mask: { type: 'string', short: 'x', description: 'Mask patterns in topics and payloads (comma separated)' },
     preserve: { type: 'string', short: 'p', default: 'none', description: 'Preserve part of masked text: none, first4, last4, or both4' },
     sort: { type: 'string', short: 's', default: 'time', description: 'Sort by: time or topic' },
     help: { type: 'boolean', default: false }
@@ -143,7 +143,7 @@ if (sortOption !== 'time' && sortOption !== 'topic') {
 }
 
 // Validate filter mode
-const filterMode = values.filter.toLowerCase();
+const filterMode = values.mode.toLowerCase();
 if (filterMode !== 'topic' && filterMode !== 'payload' && filterMode !== 'both') {
   console.error(`Invalid filter mode: ${filterMode}. Must be 'topic', 'payload', or 'both'.`);
   showHelp();
@@ -166,13 +166,13 @@ if (values.exclude) {
   }
 }
 
-// Process include patterns
+// Process filter patterns
 const includePatterns: string[] = [];
-if (values.include) {
+if (values.filter) {
   // Split by comma and trim each pattern
-  includePatterns.push(...values.include.split(',').map(p => p.trim()));
+  includePatterns.push(...values.filter.split(',').map(p => p.trim()));
   if (debug) {
-    console.log(`Including only topics/payloads matching patterns: ${includePatterns.join(', ')}`);
+    console.log(`Including only topics/payloads matching patterns: ${includePatterns.join(', ')} (using mode: ${values.mode})`);
   }
 }
 
@@ -369,6 +369,23 @@ if (username && password) {
   connectOptions.password = password;
 }
 
+// Check for old flag usage
+if (process.argv.includes('-i')) {
+  console.error("Error: The -i flag has been replaced with -f (filter). Please update your command.");
+  showHelp();
+}
+
+if (process.argv.includes('-m') && !process.argv.includes('--mode')) {
+  // Only error if it's being used as a short flag for mask, not for mode
+  const mIndex = process.argv.indexOf('-m');
+  const nextArg = process.argv[mIndex + 1];
+  
+  if (nextArg && !nextArg.match(/^(topic|payload|both)$/i)) {
+    console.error("Error: The -m flag for masking has been replaced with -x. Please update your command.");
+    showHelp();
+  }
+}
+
 try {
   if (debug) console.log(`Attempting to connect to ${host}...`);
   
@@ -398,9 +415,9 @@ try {
       bannerLines.push(`Excluding topics: ${excludePatterns.join(', ')}`);
     }
     
-    // Add inclusion info if applicable
+    // Add filter info if applicable
     if (includePatterns.length > 0) {
-      bannerLines.push(`Including only messages matching: ${includePatterns.join(', ')} (filter: ${filterMode})`);
+      bannerLines.push(`Filtering messages matching: ${includePatterns.join(', ')} (mode: ${filterMode})`);
     }
     
     // Add masking info if applicable
@@ -873,7 +890,7 @@ try {
       `| 🚫 Excluding ${excludePatterns.length} pattern${excludePatterns.length > 1 ? 's' : ''}` : 
       '';
     const includeInfo = includePatterns.length > 0 ?
-      `| 🔍 Filtering for ${includePatterns.join(', ')} (${filterMode})` :
+      `| 🔍 Filtering for ${includePatterns.join(', ')} (mode: ${filterMode})` :
       '';
     const maskInfo = maskPatterns.length > 0 ?
       `| 🎭 Masking ${maskingEnabled ? 'ON' : 'OFF'} (${preserveMode})` :
