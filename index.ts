@@ -15,7 +15,7 @@ Usage: bunx mqtt-sight [options]
 Examples:
   bunx mqtt-sight -t "#" -h localhost -u username -P password -d
   bunx mqtt-sight -t "sensor/#" -h localhost -u username -P password --clear
-  bunx mqtt-sight -t "#" -h localhost -u username -P password --live
+  bunx mqtt-sight -t "#" -h localhost -u username -P password --no-live
   bunx mqtt-sight -t "#" -h localhost -e "internal/*,debug/*,sys*"
   bunx mqtt-sight -t "#" -h localhost -s topic
   bunx mqtt-sight -t "#" -h localhost -f "error-*,warning-*" --live
@@ -40,7 +40,8 @@ Options:
                  Example: with "last4" and mask "password", shows "****word"
   -s, --sort     Sort messages by: 'time' or 'topic' (default: 'time')
   --clear        Clear retained messages on subscribed topics
-  --live         Show all messages, not just retained ones (default: show only retained)
+  --live         Show all messages, not just retained ones (default: ON)
+  --no-live      Show only retained messages
   --help         Display this help message
 
 Interactive Commands:
@@ -101,7 +102,8 @@ const { values, positionals } = parseArgs({
     P: { type: 'string', short: 'P' },
     d: { type: 'boolean', short: 'd', default: false },
     clear: { type: 'boolean', default: false, description: 'Clear retained messages' },
-    live: { type: 'boolean', default: false, description: 'Show all messages (not just retained)' },
+    live: { type: 'boolean', default: true, description: 'Show all messages (not just retained)' },
+    'no-live': { type: 'boolean', default: false, description: 'Show only retained messages' },
     exclude: { type: 'string', short: 'e', description: 'Exclude topics matching pattern (comma separated)' },
     filter: { type: 'string', short: 'f', description: 'Include only topics/payloads matching pattern (comma separated)' },
     mode: { type: 'string', short: 'm', default: 'both', description: 'Filter mode: topic, payload, or both' },
@@ -133,7 +135,8 @@ const username = values.u;
 const password = values.P;
 const debug = values.d;
 const clearRetained = values.clear;
-const showLiveMessages = values.live;
+// No-live flag overrides live flag if set
+const showLiveMessages = values['no-live'] ? false : values.live;
 const sortOption = values.sort.toLowerCase();
 
 // Validate sort option

@@ -1,6 +1,6 @@
 {
   "name": "mqtt-sight",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "An advanced MQTT message visualization tool with powerful filtering, masking, and display options",
   "module": "index.ts",
   "type": "module",
